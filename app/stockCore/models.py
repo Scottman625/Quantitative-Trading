@@ -4,6 +4,8 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.urls import reverse
 from ckeditor.fields import RichTextField
 from ckeditor_uploader.fields import RichTextUploadingField
+from django.db.models import Avg ,Sum 
+import decimal
 
 class UserManager(BaseUserManager):
 
@@ -125,18 +127,37 @@ class StockRecord(models.Model):
     DayHigh = models.DecimalField(max_digits=7, decimal_places=2)
     DayLow = models.DecimalField(max_digits=7, decimal_places=2)
 
+
     #交易股數
     Volume = models.DecimalField(max_digits=13, decimal_places=0)
-    #交易筆數
-    Transaction = models.IntegerField()
-    #交易金額
-    TurnOver = models.DecimalField(max_digits=14, decimal_places=0)
-    #長或跌
-    Dir = models.CharField(max_length=255)
-    Change = models.DecimalField(max_digits=6, decimal_places=2)
-    #最後買價與量
-    FinalBuyPrice = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    FinalBuyVolume = models.IntegerField(default=0)
-    #最後賣價與量
-    FinalSellPrice = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    FinalSellVolume = models.IntegerField(default=0)
+    # #交易筆數
+    # Transaction = models.IntegerField(default=0)
+    # #交易金額
+    # TurnOver = models.DecimalField(max_digits=14, decimal_places=0)
+    # #長或跌
+    # Dir = models.CharField(max_length=255)
+    # Change = models.DecimalField(max_digits=6, decimal_places=2)
+    # #最後買價與量
+    # FinalBuyPrice = models.DecimalField(max_digits=7, decimal_places=2, default=0)
+    # FinalBuyVolume = models.IntegerField(default=0)
+    # #最後賣價與量
+    # FinalSellPrice = models.DecimalField(max_digits=7, decimal_places=2, default=0)
+    # FinalSellVolume = models.IntegerField(default=0)
+
+    @property
+    def MA_5(self):
+        ma_5 = StockRecord.objects.order_by('-date')[:5].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        digit = len(str(self.ClosingPrice).split('.')[1])
+        return round(decimal.Decimal(str(ma_5)), digit)
+
+    @property
+    def MA_10(self):
+        ma_10 = StockRecord.objects.order_by('-date')[:10].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        digit = len(str(self.ClosingPrice).split('.')[1])
+        return round(decimal.Decimal(str(ma_10)), digit)
+
+    @property
+    def MA_20(self):
+        ma_20 = StockRecord.objects.order_by('-date')[:20].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        digit = len(str(self.ClosingPrice).split('.')[1])
+        return round(decimal.Decimal(str(ma_20)), digit)

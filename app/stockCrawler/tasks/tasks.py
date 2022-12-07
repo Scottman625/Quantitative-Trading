@@ -8,8 +8,6 @@ import requests
 import calendar
 import time
 import random
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from requests.auth import HTTPProxyAuth
 
 

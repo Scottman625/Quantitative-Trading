@@ -12,3 +12,4 @@ django-ckeditor
 scipy
 numpy
 shioaji
+pandas
