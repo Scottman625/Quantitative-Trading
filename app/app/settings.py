@@ -27,7 +27,8 @@ SECRET_KEY = 'django-insecure-yvgcb57aehq@077#6-p6((__vcmq%%hg3fg5-%$9a3zp+u2zuy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost',
+                '127.0.0.1',]
 ALLOWED_HOSTS.extend(
     filter(
         None,
@@ -136,5 +137,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CELERY_BROKER_URL = 'amqp://guest:guest@localhost'
 
 AUTH_USER_MODEL = 'stockCore.User'

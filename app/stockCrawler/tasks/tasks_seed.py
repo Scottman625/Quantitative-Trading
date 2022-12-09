@@ -4,6 +4,7 @@ import shioaji as sj # 載入永豐金Python API
 import pandas as pd
 from datetime import date, timedelta
 from decimal import Decimal
+from django.db.models import Avg ,Sum 
 import csv
 import os
 
@@ -53,7 +54,7 @@ def import_stock_records():
     end_date = '20' + date.today().strftime("%y-%m-%d")
     stocks = Stock.objects.all()
     for stock in stocks:
-        if StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=5))).count() == 0:
+        if (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=5))).count() == 0) and (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=2))).count() == 0):
             try:
                 kbars =api.kbars(contract=api.Contracts.Stocks[stock.stock_code], start = start_date , end = end_date )
                 df = pd.DataFrame({**kbars})
@@ -87,87 +88,55 @@ def import_stock_records():
 
     api.logout() # 登出
 
+def import_stock_records_MA():
+    sj.__version__ # 版本為 "0.3.6.dev3"
+    api = sj.Shioaji(simulation=False) # simulation=False 即表示使用正式環境
+    PERSON_ID = "D122776936" #身分證字號
+    PASSWORD = "Scott0815" #密碼
+    api.login(PERSON_ID, PASSWORD) # 登入
 
-# def create_key_value_index():
-#     KeyValueIndex.objects.create(name='本益比', type='key_index', variable_column='PriceEarningRatio')
-#     KeyValueIndex.objects.create(name='市值', type='key_index', variable_column='MarketValue')
-#     KeyValueIndex.objects.create(name='股利', type='key_index', variable_column='Dividend')
-#     KeyValueIndex.objects.create(name='EPS', type='key_index', variable_column='EPS')
-#     KeyValueIndex.objects.create(name='殖利率', type='key_index', variable_column='Yield')
-#     KeyValueIndex.objects.create(name='ROE', type='key_index', variable_column='ReturnOfEquity')
-#     KeyValueIndex.objects.create(name='ROA', type='key_index', variable_column='ReturnOfAssets')
-#     KeyValueIndex.objects.create(name='股票淨值比', type='key_index', variable_column='PriceBookRatio')
-#     KeyValueIndex.objects.create(name='毛利率', type='key_index', variable_column='GrossMargin')
-#     KeyValueIndex.objects.create(name='稅後淨利率', type='key_index', variable_column='NetProfitAfterTaxMargin')
-#     KeyValueIndex.objects.create(name='負債資產比', type='key_index', variable_column='DebtAssetRatio')
+    start_date = '2022-01-01'
+    end_date = date.today().strftime("%Y-%m-%d")
+    stocks = Stock.objects.all()
+    for stock in stocks:
+        # if (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=5))).count() == 0) and (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=2))).count() == 0):
+            try:
+                kbars =api.kbars(contract=api.Contracts.Stocks[stock.stock_code], start = start_date , end = end_date )
+                df = pd.DataFrame({**kbars})
+                df.ts = pd.to_datetime(df.ts)
+                # df
+                #分K轉成日K
+                df.set_index(df.ts,inplace=True)
+                df = df.resample('D').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume':'sum'})
+                df.dropna(inplace=True)
+                df['ma_s']=df.iloc[:,3].rolling(5).mean() 
+                df['ma_m']=df.iloc[:,3].rolling(10).mean() 
+                df['ma_l']=df.iloc[:,3].rolling(20).mean() 
+                print(stock.stock_code)
+                for index, row in df.iterrows():
+                    try:
+                        if StockRecord.objects.filter(stock=stock,date=row.name.date()).count()==0:
+                            stockRecord = StockRecord()
+                        else:
+                            stockRecord = StockRecord.objects.filter(stock=stock,date=row.name.date()).first()
+                        stockRecord.MA_5 = round(Decimal(row.ma_s),2)
+                        stockRecord.MA_10 = round(Decimal(row.ma_m),2)
+                        stockRecord.MA_20 = round(Decimal(row.ma_l),2)
+     
+                        stockRecord.save()
+                    except:
+                        # print(stock.stock_code + " Some data went wrong")
+                        pass
 
-#     KeyValueIndex.objects.create(name='近五年EPS成長率', type='growth_index', variable_column='EPSGrowthRate5Years')
-#     KeyValueIndex.objects.create(name='近五年ROE成長率', type='growth_index', variable_column='ROEGrowthRate5Years')
-#     KeyValueIndex.objects.create(name='近五年營收成長率', type='growth_index', variable_column='RevenueGrowthRate5Years')
-#     KeyValueIndex.objects.create(name='近一年EPS成長率', type='growth_index', variable_column='EPSGrowthRate1Year')
-#     KeyValueIndex.objects.create(name='近一年ROE成長率', type='growth_index', variable_column='ROEGrowthRate1Year')
-#     KeyValueIndex.objects.create(name='近一年營收成長率', type='growth_index', variable_column='RevenueGrowthRate1Year')
+            except:
+                print(stock.name + " " + stock.stock_code  + " no index data.")
 
-# def create_filter_conditions():
-#     FilterCondition.objects.create(title='大師選股', selections='無,巴菲特,彼得林區', variable_column='Master', usage='often')
-#     FilterCondition.objects.create(title='市值', selections='無,>1000億,>500億,>100億,>50億,>20億,>10億', variable_column='MarketValue', usage='often')
-#     FilterCondition.objects.create(title='產業', selections='無,水泥工業,食品工業,塑膠工業,紡織纖維,電機機械,電器電纜,化學工業,生技醫療業,玻璃陶瓷,造紙工業,鋼鐵工業,橡膠工業,汽車工業,半導體業,光電業,通信網路業,電子零組件業,電子通路業,資訊服務業,其他電子業,油電燃氣業,建材營造,航運業,觀光事業,金融保險業,貿易百貨', variable_column='Category', usage='often')
-#     FilterCondition.objects.create(title='本益比', selections='無,<5,<10,<15,<20,<30', variable_column='PriceEarningRatio', usage='often')
-#     FilterCondition.objects.create(title='殖利率', selections='無,>8%,>5%,>3%,>2%,>1%', variable_column='Yield', usage='often')
-#     FilterCondition.objects.create(title='EPS', selections='無,>20,>15,>10,>5,>0', variable_column='EPS', usage='often')
-#     FilterCondition.objects.create(title='ROE', selections='無,>25%,>20%,>15%,>10%,>5%,>0%', variable_column='ReturnOfEquity', usage='often')
-#     FilterCondition.objects.create(title='ROA', selections='無,>25%,>20%,>15%,>10%,>5%,>0%', variable_column='ReturnOfAssets', usage='often')
-#     FilterCondition.objects.create(title='P/B股價淨值比', selections='無,<1,<2,<3,<5,<10,<20', variable_column='PriceBookRatio', usage='often')
-#     FilterCondition.objects.create(title='毛利率', selections='無,>60%,>50%,>40%,>30%,>20%,>10%,>0%', variable_column='GrossMargin', usage='often')
-#     FilterCondition.objects.create(title='營業利益率', selections='無,>50%,>40%,>30%,>20%,>10%,>0%', variable_column='OperatingMargin', usage='often')
-#     FilterCondition.objects.create(title='稅後淨利率', selections='無,>50%,>40%,>30%,>20%,>10%,>0%', variable_column='NetProfitAfterTaxMargin', usage='often')
-#     FilterCondition.objects.create(title='負債資產比', selections='無,<5%,<10%,<15%,<20%,<25%,<30%,<40%,<50%', variable_column='DebtAssetRatio', usage='often')
-#     FilterCondition.objects.create(title='EPS近五年平均成長率', selections='無,>20%,>15%,>10%,>5%,>0%', variable_column='EPSGrowthRate5Years', usage='often')
-#     FilterCondition.objects.create(title='ROE近五年平均成長率', selections='無,>20%,>15%,>10%,>5%,>0%', variable_column='ROEGrowthRate5Years', usage='often')
-#     FilterCondition.objects.create(title='營收近五年平均成長率', selections='無,>20%,>15%,>10%,>5%,>0%', variable_column='RevenueGrowthRate5Years', usage='often')
+    api.logout() # 登出
 
-#     FilterCondition.objects.create(title='EPS近一年成長率', selections='無,>30%,>20%,>15%,>10%,>5%,>0%', variable_column='EPSGrowthRate1Year', usage='not_often')
-#     FilterCondition.objects.create(title='ROE近一年成長率', selections='無,>30%,>20%,>15%,>10%,>5%,>0%', variable_column='ROEGrowthRate1Year', usage='not_often')
-#     FilterCondition.objects.create(title='營收近一年成長率', selections='無,>30%,>20%,>15%,>10%,>5%,>0%', variable_column='RevenueGrowthRate1Year', usage='not_often')
-#     FilterCondition.objects.create(title='稅前盈利率', selections='無,>60%,>50%,>40%,>30%,>20%,>10%,>0%', variable_column='NetProfitBeforeTaxMargin', usage='not_often')
-#     FilterCondition.objects.create(title='經營者持股比例', selections='無,>5%,>4%,>3%,2%,>1%', variable_column='DirectorSupervisorShareRatio', usage='not_often')
-#     FilterCondition.objects.create(title='股利發放率', selections='無,<60%,<50%,<40%,<30%,<20%,<10%', variable_column='DividendPayoutRatio', usage='not_often')
 
-# def master_filter_conditions():
-#     master_filter_conditions = UserFilterCondition()
-#     master_filter_conditions.Master = '巴菲特'
-#     master_filter_conditions.MarketValue = '>100億'
-#     master_filter_conditions.GrossMargin = '>20%'
-#     master_filter_conditions.ReturnOfEquity = '>15%'
-#     master_filter_conditions.Yield = '>3%'
-#     master_filter_conditions.EPS = '>0'
-#     master_filter_conditions.EPSGrowthRate5Years = '>5%'
-#     master_filter_conditions.EPSGrowthRate1Year = '>0%'
-#     master_filter_conditions.user = User.objects.get(email='admin@mysite.com')
-#     master_filter_conditions.save()
-
-#     master_filter_conditions = UserFilterCondition()
-#     master_filter_conditions.Master = '彼得林區'
-#     master_filter_conditions.MarketValue = '>50億'
-#     master_filter_conditions.ReturnOfAssets = '>5%'
-#     master_filter_conditions.PriceEarningRatio = '<20'
-#     master_filter_conditions.EPSGrowthRate1Year = '>20%'
-#     master_filter_conditions.DebtAssetRatio = '<30%'
-#     master_filter_conditions.user = User.objects.get(email='admin@mysite.com')
-#     master_filter_conditions.save()
-
-# def interest_rate_history():
-#     # InterestRate.objects.create(date=datetime.strptime("2001-01-01", "%Y-%m-%d"), rate=3.750)
-#     module_dir = os.path.dirname(__file__)
-#     file_path = os.path.join(module_dir, 'interest_rate.csv')
-
-#     with open(file_path, newline='') as csvfile:
-#         # 讀取 CSV 檔案內容
-#         rows = csv.reader(csvfile)
-
-#         # 以迴圈輸出每一列
-#         for row in rows:
-#             date_string = str(int(row[0])+ 191100)+'01'
-#             print(date_string)
-#             InterestRate.objects.create(date=datetime.strptime(date_string, "%Y%m%d"), rate=float(row[1]))
-#             # print(row)
+def calculate_MA():
+    stocks = Stock.objects.all()
+    for stock in stocks:
+        stockRecords = StockRecord.objects.filter(stock=stock)
+        for stock_record in stockRecords:
+            stock_record.MA_5 = stockRecords.filter(date__lte=stock_record.date).order_by('-date')[:5].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']

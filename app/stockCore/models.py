@@ -127,37 +127,97 @@ class StockRecord(models.Model):
     DayHigh = models.DecimalField(max_digits=7, decimal_places=2)
     DayLow = models.DecimalField(max_digits=7, decimal_places=2)
 
+    MA_s = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
+    MA_m = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
+    MA_l = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
 
     #交易股數
     Volume = models.DecimalField(max_digits=13, decimal_places=0)
-    # #交易筆數
-    # Transaction = models.IntegerField(default=0)
-    # #交易金額
-    # TurnOver = models.DecimalField(max_digits=14, decimal_places=0)
-    # #長或跌
-    # Dir = models.CharField(max_length=255)
-    # Change = models.DecimalField(max_digits=6, decimal_places=2)
-    # #最後買價與量
-    # FinalBuyPrice = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    # FinalBuyVolume = models.IntegerField(default=0)
-    # #最後賣價與量
-    # FinalSellPrice = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    # FinalSellVolume = models.IntegerField(default=0)
 
     @property
     def MA_5(self):
-        ma_5 = StockRecord.objects.order_by('-date')[:5].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        
+        ma_5 = StockRecord.objects.filter(stock=self.stock,date__lte=self.date).order_by('-date')[:5].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
         digit = len(str(self.ClosingPrice).split('.')[1])
         return round(decimal.Decimal(str(ma_5)), digit)
 
     @property
     def MA_10(self):
-        ma_10 = StockRecord.objects.order_by('-date')[:10].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        ma_10 = StockRecord.objects.filter(stock=self.stock,date__lte=self.date).order_by('-date')[:10].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
         digit = len(str(self.ClosingPrice).split('.')[1])
         return round(decimal.Decimal(str(ma_10)), digit)
 
     @property
     def MA_20(self):
-        ma_20 = StockRecord.objects.order_by('-date')[:20].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        ma_20 = StockRecord.objects.filter(stock=self.stock,date__lte=self.date).order_by('-date')[:20].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
         digit = len(str(self.ClosingPrice).split('.')[1])
         return round(decimal.Decimal(str(ma_20)), digit)
+
+class KbarsType(models.Model):
+    Kbars_Type = [
+        ('1', 'ChildParent'),
+        ('2', 'LongShadeLine'),
+    ]
+    name = models.CharField(max_length=100, choices=Kbars_Type,null=True,blank=True)
+    def __str__(self):
+        return self.name
+
+class StockDayRecommend(models.Model):
+
+    stock = models.ForeignKey(
+        Stock,
+        on_delete=models.CASCADE,
+    )
+
+    date = models.DateField(auto_now=False)
+
+    type = models.ForeignKey(
+        KbarsType,
+        on_delete=models.CASCADE,
+    )
+
+class UserStock(models.Model):
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+    )
+
+    stock = models.ForeignKey(
+        Stock,
+        on_delete=models.CASCADE,
+    )
+
+    buy_at = models.DateTimeField(auto_now=False, blank=True, null=True)
+
+    bid_volume = models.DecimalField(max_digits=13, decimal_places=0)
+
+    amount = models.IntegerField(default=0,null=True)
+
+    bid_price = models.DecimalField(max_digits=7, decimal_places=2)
+
+    cost = models.DecimalField(max_digits=13, decimal_places=2)
+
+    is_cover = models.BooleanField(default=False)
+
+    profit = models.DecimalField(max_digits=13, decimal_places=2)
+
+
+class UserStockTrade(models.Model):
+
+    userstock = models.ForeignKey(
+        UserStock,
+        on_delete=models.CASCADE,
+    )
+
+    sell_at = models.DateTimeField(auto_now=False, blank=True, null=True)
+
+    sell_volume = models.DecimalField(max_digits=13, decimal_places=0)
+
+    # amount = models.IntegerField(default=0,null=True)
+
+    sell_money = models.DecimalField(max_digits=7, decimal_places=2)
+
+    sell_price = models.DecimalField(max_digits=13, decimal_places=2)
+
+    profit = models.DecimalField(max_digits=13, decimal_places=2)
