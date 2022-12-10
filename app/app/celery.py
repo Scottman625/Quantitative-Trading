@@ -56,6 +56,11 @@ def setup_periodic_tasks(sender, **kwargs):
         get_stock_day_recommend.s('get today stock recommend'),
     )
 
+    sender.add_periodic_task(
+        crontab(hour=7, minute=37),
+        get_recent_N_font_stock.s('get recent N font type stock'),
+    )
+
 
 @app.task
 def test(arg):
@@ -65,11 +70,11 @@ def test(arg):
 @app.task
 def get_stock_datas(arg):
     from stockCore.models import User,Stock ,StockRecord
-    
+    user = User.objects.get(id=2)
     sj.__version__ # 版本為 "0.3.6.dev3"
     api = sj.Shioaji(simulation=False) # simulation=False 即表示使用正式環境
-    PERSON_ID = "D122776936" #身分證字號
-    PASSWORD = "Scott0815" #密碼
+    PERSON_ID = user.PERSON_ID #身分證字號
+    PASSWORD = user.account_password #密碼
     api.login(PERSON_ID, PASSWORD) # 登入
 
     # start_date = '20' + (date.today() - timedelta(days=2)).strftime("%y-%m-%d")
@@ -172,3 +177,68 @@ def get_stock_day_recommend(args):
             'longShadeLine':longShadeLine_list}
 
     print(buy_data)
+
+
+@app.task
+def get_recent_N_font_stock(args):
+    from stockCore.models import User,Stock ,StockRecord ,StockDayRecommend ,KbarsType ,N_Font_Type_Stock
+    stocks = Stock.objects.all()
+    N_font_list = []
+    for stock in stocks:
+        try:
+            stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')
+            stockRecords_list = list(stockRecords)
+            def find_N_font_type(stockRecords_list):
+                find_Early_stage = False
+                for last_N_days in range(15,-1,-1):
+                    if (stockRecords_list[last_N_days].MA_20 < stockRecords_list[last_N_days+8].MA_20 ) and (stockRecords_list[last_N_days+8].MA_20  < stockRecords_list[last_N_days+16].MA_20 ) :              
+                        if (((stockRecords_list[last_N_days].ClosingPrice - stockRecords_list[last_N_days+2].ClosingPrice)/stockRecords_list[last_N_days+2].OpeningPrice) >= 0.1) : 
+                            find_Early_stage = True
+                            break
+                if find_Early_stage == True:
+                    print(stock.stock_code,'find_early_stage')
+                    for Early_Stage_end_days in range(0,10):
+                        if last_N_days - Early_Stage_end_days  >= 0:
+                            if (stockRecords_list[last_N_days-Early_Stage_end_days].OpeningPrice > stockRecords_list[last_N_days-Early_Stage_end_days].ClosingPrice):
+                                Early_Stage_end_date = last_N_days - Early_Stage_end_days +1
+                                break
+                        else:       
+                            Early_Stage_end_date = last_N_days - Early_Stage_end_days + 2
+                            break
+
+                    for Early_Stage_start_days in range(0,10):
+
+                        if (stockRecords_list[last_N_days+Early_Stage_start_days].OpeningPrice > stockRecords_list[last_N_days+Early_Stage_start_days].ClosingPrice):
+                            Early_Stage_start_date = last_N_days + Early_Stage_start_days -1
+                            break
+                    print('b',Early_Stage_start_date)
+                    Early_Stage_start_price = stockRecords_list[Early_Stage_start_date].OpeningPrice
+                    Early_Stage_high_price = stockRecords_list[Early_Stage_end_date].DayHigh
+                    Early_Stage_start_at = date.today() - timedelta(days=(Early_Stage_start_date))
+                    print(Early_Stage_start_price,Early_Stage_high_price)
+                    if N_Font_Type_Stock.objects.filter(stock=stock,Early_Stage_start_at = (date.today() - timedelta(days=(Early_Stage_start_date)))).count() == 0:
+                        N_Font_Type_Stock.objects.create(stock=stock,Early_Stage_start_at=Early_Stage_start_at,Early_Stage_start_price=Early_Stage_start_price,Early_Stage_high_price=Early_Stage_high_price)
+
+                    else:
+                        N_type_stock = N_Font_Type_Stock.objects.get(stock=stock,Early_Stage_start_at = (date.today() - timedelta(days=(Early_Stage_start_date))))
+                        N_type_stock.Early_Stage_start_price = Early_Stage_start_price
+                        N_type_stock.Early_Stage_high_price = Early_Stage_high_price
+                        N_type_stock.save()
+
+
+                    return True
+                            
+                else:
+                    return False
+
+            N_font_type_choose = find_N_font_type(stockRecords_list)
+            if N_font_type_choose == True:
+                
+                N_font_list.append(stock.stock_code)
+                if StockDayRecommend.objects.filter(stock=stock,date=date.today(),type=KbarsType.objects.get(id=3)).count() == 0:
+                    StockDayRecommend.objects.create(stock=stock,date=date.today(),type=KbarsType.objects.get(id=3))
+
+        except:
+            pass
+    
+    print(N_font_list)

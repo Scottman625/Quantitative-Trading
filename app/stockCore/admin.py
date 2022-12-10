@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Stock, StockRecord, User ,StockDayRecommend ,UserStock ,UserStockTrade
-from .models import Index,Category ,KbarsType
+from .models import Index,Category ,KbarsType ,N_Font_Type_Stock
 
 
 @admin.register(Stock)
@@ -40,3 +40,7 @@ class UserStockAdmin(admin.ModelAdmin):
 @admin.register(UserStockTrade)
 class UserStockTradeAdmin(admin.ModelAdmin):
     list_display = ('id','userstock','sell_price','sell_volume','profit')
+
+@admin.register(N_Font_Type_Stock)
+class N_Font_Type_StockAdmin(admin.ModelAdmin):
+    list_display = ('id','stock','Early_Stage_start_at','Early_Stage_start_price','Early_Stage_high_price')

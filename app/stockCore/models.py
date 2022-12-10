@@ -50,6 +50,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     google_id = models.CharField(max_length=255, default='', blank = True, null=True)
     apple_id = models.CharField(max_length=255, default='', blank = True, null=True)
     line_id = models.CharField(max_length=255, default='', blank = True, null=True)
+    PERSON_ID = models.CharField(max_length=255, default='', blank = True, null=True)
+    account_password = models.CharField(max_length=255, default='', blank = True, null=True)
 
     USERNAME_FIELD = 'email'
 
@@ -127,9 +129,6 @@ class StockRecord(models.Model):
     DayHigh = models.DecimalField(max_digits=7, decimal_places=2)
     DayLow = models.DecimalField(max_digits=7, decimal_places=2)
 
-    MA_s = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
-    MA_m = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
-    MA_l = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
 
     #交易股數
     Volume = models.DecimalField(max_digits=13, decimal_places=0)
@@ -157,11 +156,31 @@ class KbarsType(models.Model):
     Kbars_Type = [
         ('1', 'ChildParent'),
         ('2', 'LongShadeLine'),
+        ('3', 'N_type')
     ]
     name = models.CharField(max_length=100, choices=Kbars_Type,null=True,blank=True)
     def __str__(self):
         return self.name
 
+class N_Font_Type_Stock(models.Model):
+
+    stock = models.ForeignKey(
+        Stock,
+        on_delete=models.CASCADE,
+    )
+
+
+    Early_Stage_start_at = models.DateField(auto_now=False)
+    Early_Stage_start_price = models.DecimalField(max_digits=13, decimal_places=2,null=True,blank=True)
+    Early_Stage_high_price = models.DecimalField(max_digits=13, decimal_places=2,null=True,blank=True)
+    Early_Stage_correction_start_at = models.DateField(auto_now=False,null=True,blank=True)
+    Early_Stage_correction_low_price =  models.DecimalField(max_digits=13, decimal_places=2,null=True,blank=True)
+    Primary_Stage_start_at = models.DateField(auto_now=False,null=True,blank=True)
+
+    @property
+    def primary_target_price(self):
+        return (self.Early_Stage_correction_low_price + ((self.Early_Stage_high_price - self.Early_Stage_start_price)*1.5)
+)
 class StockDayRecommend(models.Model):
 
     stock = models.ForeignKey(

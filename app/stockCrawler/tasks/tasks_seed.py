@@ -133,10 +133,3 @@ def import_stock_records_MA():
 
     api.logout() # 登出
 
-
-def calculate_MA():
-    stocks = Stock.objects.all()
-    for stock in stocks:
-        stockRecords = StockRecord.objects.filter(stock=stock)
-        for stock_record in stockRecords:
-            stock_record.MA_5 = stockRecords.filter(date__lte=stock_record.date).order_by('-date')[:5].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
