@@ -47,17 +47,17 @@ def setup_periodic_tasks(sender, **kwargs):
 
     #run at 1500 every Taiwan time
     sender.add_periodic_task(
-        crontab(hour=6, minute=10, day_of_week='1-5'),
+        crontab(hour=8, minute=40, day_of_week='1-5'),
         get_stock_datas.s('crawl today stock record'),
     )
 
     sender.add_periodic_task(
-        crontab(hour=10, minute=0, day_of_week='1-5'),
+        crontab(hour=8, minute=53, day_of_week='1-5'),
         get_stock_day_recommend.s('get today stock recommend'),
     )
 
     sender.add_periodic_task(
-        crontab(hour=7, minute=37),
+        crontab(hour=8, minute=55),
         get_recent_N_font_stock.s('get recent N font type stock'),
     )
 
@@ -211,20 +211,18 @@ def get_recent_N_font_stock(args):
                         if (stockRecords_list[last_N_days+Early_Stage_start_days].OpeningPrice > stockRecords_list[last_N_days+Early_Stage_start_days].ClosingPrice):
                             Early_Stage_start_date = last_N_days + Early_Stage_start_days -1
                             break
-                    print('b',Early_Stage_start_date)
                     Early_Stage_start_price = stockRecords_list[Early_Stage_start_date].OpeningPrice
                     Early_Stage_high_price = stockRecords_list[Early_Stage_end_date].DayHigh
-                    Early_Stage_start_at = date.today() - timedelta(days=(Early_Stage_start_date))
-                    print(Early_Stage_start_price,Early_Stage_high_price)
-                    if N_Font_Type_Stock.objects.filter(stock=stock,Early_Stage_start_at = (date.today() - timedelta(days=(Early_Stage_start_date)))).count() == 0:
+                    Early_Stage_start_at = stockRecords_list[Early_Stage_start_date].date
+                    if N_Font_Type_Stock.objects.filter(stock=stock,Early_Stage_start_at = Early_Stage_start_at).count() == 0:
                         N_Font_Type_Stock.objects.create(stock=stock,Early_Stage_start_at=Early_Stage_start_at,Early_Stage_start_price=Early_Stage_start_price,Early_Stage_high_price=Early_Stage_high_price)
-
+                        N_font_list.append(stock.stock_code)
                     else:
-                        N_type_stock = N_Font_Type_Stock.objects.get(stock=stock,Early_Stage_start_at = (date.today() - timedelta(days=(Early_Stage_start_date))))
+                        N_type_stock = N_Font_Type_Stock.objects.get(stock=stock,Early_Stage_start_at = Early_Stage_start_at)
                         N_type_stock.Early_Stage_start_price = Early_Stage_start_price
                         N_type_stock.Early_Stage_high_price = Early_Stage_high_price
                         N_type_stock.save()
-
+                        
 
                     return True
                             
@@ -233,8 +231,6 @@ def get_recent_N_font_stock(args):
 
             N_font_type_choose = find_N_font_type(stockRecords_list)
             if N_font_type_choose == True:
-                
-                N_font_list.append(stock.stock_code)
                 if StockDayRecommend.objects.filter(stock=stock,date=date.today(),type=KbarsType.objects.get(id=3)).count() == 0:
                     StockDayRecommend.objects.create(stock=stock,date=date.today(),type=KbarsType.objects.get(id=3))
 

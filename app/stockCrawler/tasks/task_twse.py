@@ -1,5 +1,5 @@
 from celery import shared_task
-from stockCore.models import Stock, StockRecord, Index, IndexRecord, SelectedIndex, Category
+from stockCore.models import Stock, StockRecord, Index, Category
 from datetime import datetime, date as thedate, timedelta
 from bs4 import BeautifulSoup
 import json
