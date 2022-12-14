@@ -8,6 +8,7 @@ import requests
 import calendar
 import time
 import random
+import pandas as pd
 import shioaji as sj # 載入永豐金Python API
 from decimal import Decimal
 from requests.auth import HTTPProxyAuth
