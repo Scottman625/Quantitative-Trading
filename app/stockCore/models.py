@@ -152,6 +152,12 @@ class StockRecord(models.Model):
         digit = len(str(self.ClosingPrice).split('.')[1])
         return round(decimal.Decimal(str(ma_20)), digit)
 
+    @property
+    def MA_60(self):
+        ma_60 = StockRecord.objects.filter(stock=self.stock,date__lte=self.date).order_by('-date')[:60].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        digit = len(str(self.ClosingPrice).split('.')[1])
+        return round(decimal.Decimal(str(ma_60)), digit)
+
 class KbarsType(models.Model):
     Kbars_Type = [
         ('1', 'ChildParent'),
