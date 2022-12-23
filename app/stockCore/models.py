@@ -129,6 +129,11 @@ class StockRecord(models.Model):
     DayHigh = models.DecimalField(max_digits=7, decimal_places=2)
     DayLow = models.DecimalField(max_digits=7, decimal_places=2)
 
+    EMA_12 = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
+    EMA_26 = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
+    DIF = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
+    MACD = models.DecimalField(max_digits=7, decimal_places=2,null=True,blank=True)
+
 
     #交易股數
     Volume = models.DecimalField(max_digits=13, decimal_places=0)
@@ -157,6 +162,18 @@ class StockRecord(models.Model):
         ma_60 = StockRecord.objects.filter(stock=self.stock,date__lte=self.date).order_by('-date')[:60].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
         digit = len(str(self.ClosingPrice).split('.')[1])
         return round(decimal.Decimal(str(ma_60)), digit)
+
+    @property
+    def MA_12(self):
+        ma_12 = StockRecord.objects.filter(stock=self.stock,date__lte=self.date).order_by('-date')[:12].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        digit = len(str(self.ClosingPrice).split('.')[1])
+        return round(decimal.Decimal(str(ma_12)), digit)
+
+    @property
+    def MA_26(self):
+        ma_26 = StockRecord.objects.filter(stock=self.stock,date__lte=self.date).order_by('-date')[:26].aggregate(Avg('ClosingPrice'))['ClosingPrice__avg']
+        digit = len(str(self.ClosingPrice).split('.')[1])
+        return round(decimal.Decimal(str(ma_26)), digit)
 
 class KbarsType(models.Model):
     Kbars_Type = [

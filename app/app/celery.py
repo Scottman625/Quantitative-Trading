@@ -1,7 +1,7 @@
 import os
 from celery import Celery
 from celery.schedules import crontab
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta ,timezone
 import shioaji as sj # 載入永豐金Python API
 import pandas as pd
 from decimal import Decimal
