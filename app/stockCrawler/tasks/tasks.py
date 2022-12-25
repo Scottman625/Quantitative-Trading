@@ -69,8 +69,37 @@ def get_stock_datas(arg):
                         # print(stock.stock_code + " Some data went wrong")
                         pass
 
+                stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')
+                stockRecords_12_list = list(stockRecords.filter(date__gte=start_date).order_by('date'))
+                    for i in range(1,len(stockRecords_12_list)):
+                        if stockRecords.filter(date=stockRecords_12_list[i].date,EMA_12__isnull=False).count() == 0:
+                            cdp = (stockRecords_12_list[i].DayHigh + stockRecords_12_list[i].DayLow + (stockRecords_12_list[i].ClosingPrice * 2))/4
+                            # print('cdp:',cdp)
+                            ema12 = round((cdp * round(decimal.Decimal(2/13),2)) + (stockRecords_12_list[i-1].EMA_12)*(1-round(decimal.Decimal(2/13),2)),2)
+
+                            stockRecords_12_list[i].EMA_12 = ema12
+                            stockRecords_12_list[i].save()
+                        
+                    
+                    stockRecords_26_list = list(stockRecords.filter(date__gte=start_date).order_by('date'))
+                    
+                    for i in range(1,len(stockRecords_26_list)):
+                        if (stockRecords.filter(date=stockRecords_26_list[i].date,EMA_26__isnull=False).count() == 0) | (stockRecords.filter(date=stockRecords_26_list[i].date,DIF__isnull=False).count() == 0):
+                            stockRecords_26_list[i].EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/27),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27),2)),2)
+                            stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - stockRecords_26_list[i].EMA_26
+                            stockRecords_26_list[i].save()
+                    
+                    
+                    stockRecords_MACD_list = list(stockRecords.filter(DIF__isnull=False,date__gte=start_date).order_by('date'))
+                    for i in range(1,len(stockRecords_MACD_list)):
+                        if stockRecords.filter(date=stockRecords_MACD_list[i].date,MACD__isnull=False).count() == 0:
+                            stockRecords_MACD_list[i].MACD = round(decimal.Decimal(stockRecords_MACD_list[i-1].MACD + round(decimal.Decimal(2/10),2)*(stockRecords_MACD_list[i].DIF-stockRecords_MACD_list[i-1].MACD)),2)
+                            stockRecords_MACD_list[i].save()
+
             except:
                 print(stock.name + " " + stock.stock_code  + " no index data.")
+
+            
 
     api.logout() # 登出
 
@@ -236,8 +265,8 @@ def calculate_MACD():
         start_date = twdt.date().strftime("%Y-%m-%d")
     for stock in stocks:
         try:
-            stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')
-            if stockRecords.filter(date=start_date,EMA_12__isnull=False,EMA_26__isnull=False,DIF__isnull=False,MACD__isnull=False).count() == 0:
+                stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')
+            # if stockRecords.filter(date=start_date,EMA_12__isnull=False,EMA_26__isnull=False,DIF__isnull=False,MACD__isnull=False).count() == 0:
                 for stockRecord in stockRecords:
                     if stockRecords.filter(date__lte=stockRecord.date).count() == 12:
                         stockRecords_12 = stockRecord
@@ -253,7 +282,7 @@ def calculate_MACD():
                 
                 stockRecords_12_list = list(stockRecords.filter(date__gte=stockRecords_12.date).order_by('date'))
                 for i in range(1,len(stockRecords_12_list)):
-                    if stockRecords.filter(date=stockRecords_12_list[i].date,EMA_12__isnull=False).count() == 0:
+                    # if stockRecords.filter(date=stockRecords_12_list[i].date,EMA_12__isnull=False).count() == 0:
                         cdp = (stockRecords_12_list[i].DayHigh + stockRecords_12_list[i].DayLow + (stockRecords_12_list[i].ClosingPrice * 2))/4
                         # print('cdp:',cdp)
                         ema12 = round((cdp * round(decimal.Decimal(2/13),2)) + (stockRecords_12_list[i-1].EMA_12)*(1-round(decimal.Decimal(2/13),2)),2)
@@ -263,26 +292,32 @@ def calculate_MACD():
                     
 
                 stockRecords_26_list = list(stockRecords.filter(date__gte=stockRecords_26.date).order_by('date'))
+                
                 for i in range(1,len(stockRecords_26_list)):
-                    if (stockRecords.filter(date=stockRecords_26_list[i].date,EMA_26__isnull=False).count() == 0) | (stockRecords.filter(date=stockRecords_26_list[i].date,DIF__isnull=False).count() == 0):
-                        stockRecords_26_list[i].EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/13),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/13),2)),2)
+                    # if (stockRecords.filter(date=stockRecords_26_list[i].date,EMA_26__isnull=False).count() == 0) | (stockRecords.filter(date=stockRecords_26_list[i].date,DIF__isnull=False).count() == 0):
+                        stockRecords_26_list[i].EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/27),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27),2)),2)
                         stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - stockRecords_26_list[i].EMA_26
                         stockRecords_26_list[i].save()
+                
 
                 for stockRecord in stockRecords:
                     if stockRecords.filter(date__lte=stockRecord.date,DIF__isnull=False).count() == 9:
                         stockRecords_MACD_9 = stockRecord
                         print("stockRecords_MACD_9:",stockRecords_MACD_9)
-                        if stockRecords.filter(date=stockRecords_MACD_9.date,MACD__isnull=False).count() == 0:
-                            MACD_9 = stockRecords.filter(DIF__isnull=False).order_by('date')[:9].aggregate(Avg('DIF'))['DIF__avg']
-                            stockRecords_MACD_9.MACD = MACD_9
-                            stockRecords_MACD_9.save()
+                        # if stockRecords.filter(date=stockRecords_MACD_9.date,MACD__isnull=False).count() == 0:
+                        MACD_9 = stockRecords.filter(DIF__isnull=False).order_by('date')[:9].aggregate(Avg('DIF'))['DIF__avg']
+                        stockRecords_MACD_9.MACD = MACD_9
+                        stockRecords_MACD_9.save()
                 
                 stockRecords_MACD_list = list(stockRecords.filter(DIF__isnull=False,date__gte=stockRecords_MACD_9.date).order_by('date'))
                 for i in range(1,len(stockRecords_MACD_list)):
-                    if stockRecords.filter(date=stockRecords_MACD_list[i].date,MACD__isnull=False).count() == 0:
+                    # if stockRecords.filter(date=stockRecords_MACD_list[i].date,MACD__isnull=False).count() == 0:
                         stockRecords_MACD_list[i].MACD = round(decimal.Decimal(stockRecords_MACD_list[i-1].MACD + round(decimal.Decimal(2/10),2)*(stockRecords_MACD_list[i].DIF-stockRecords_MACD_list[i-1].MACD)),2)
                         stockRecords_MACD_list[i].save()
+
+            # else:
+            #     record = stockRecords.filter(date=start_date,EMA_12__isnull=False,EMA_26__isnull=False,DIF__isnull=False,MACD__isnull=False)
+            #     print(stock.stock_code,record.EMA_12,record.EMA_26,record.DIF,record.MACD)
         except:
             pass
 
