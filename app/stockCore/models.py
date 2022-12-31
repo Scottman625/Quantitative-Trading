@@ -175,11 +175,16 @@ class StockRecord(models.Model):
         digit = len(str(self.ClosingPrice).split('.')[1])
         return round(decimal.Decimal(str(ma_26)), digit)
 
+    @property
+    def OSC(self):
+        return (self.DIF - self.MACD)
+
 class KbarsType(models.Model):
     Kbars_Type = [
         ('1', 'ChildParent'),
         ('2', 'LongShadeLine'),
-        ('3', 'N_type')
+        ('3', 'N_type'),
+        ('4','Red_sign')
     ]
     name = models.CharField(max_length=100, choices=Kbars_Type,null=True,blank=True)
     def __str__(self):
@@ -199,6 +204,8 @@ class N_Font_Type_Stock(models.Model):
     Early_Stage_correction_start_at = models.DateField(auto_now=False,null=True,blank=True)
     Early_Stage_correction_low_price =  models.DecimalField(max_digits=13, decimal_places=2,null=True,blank=True)
     Primary_Stage_start_at = models.DateField(auto_now=False,null=True,blank=True)
+
+    red_sign_start_at = models.DateField(auto_now=False,null=True,blank=True)
 
     @property
     def primary_target_price(self):

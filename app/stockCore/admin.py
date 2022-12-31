@@ -43,4 +43,4 @@ class UserStockTradeAdmin(admin.ModelAdmin):
 
 @admin.register(N_Font_Type_Stock)
 class N_Font_Type_StockAdmin(admin.ModelAdmin):
-    list_display = ('id','stock','Early_Stage_start_at','Early_Stage_start_price','Early_Stage_high_price')
+    list_display = ('id','stock','Early_Stage_start_at','Early_Stage_start_price','Early_Stage_high_price','red_sign_start_at')
