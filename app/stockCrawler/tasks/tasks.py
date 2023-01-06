@@ -41,8 +41,12 @@ def get_stock_datas(arg):
         start_date = (twdt.date() - timedelta(days=3)).strftime("%Y-%m-%d")
     else:
         start_date = twdt.date().strftime("%Y-%m-%d")
+
     if weekday == 0:
         EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=3)
+    else:
+        EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=1)
+        
     stocks = Stock.objects.all()
     print(start_date)
     for stock in stocks:
@@ -215,7 +219,7 @@ def get_recent_N_font_stock(args):
                             high_price = max(high_price_list)
 
                             high_price_index = high_price_list.index(high_price)
-                            if ((high_price - stockRecords_list[start_date + Early_Stage_start_days].ClosingPrice)/stockRecords_list[start_date + Early_Stage_start_days].ClosingPrice) >= 0.1 :
+                            if ((high_price - stockRecords_list[start_date].ClosingPrice)/stockRecords_list[start_date].ClosingPrice) >= 0.1 :
                                 Early_Stage_end_date = start_date - high_price_index 
                                 Early_Stage_high_price = stockRecords_list[Early_Stage_end_date].DayHigh
                                 Early_Stage_correction_start_at = stockRecords_list[Early_Stage_end_date].date
@@ -223,12 +227,13 @@ def get_recent_N_font_stock(args):
                                 break
                         else:     
                             continue
-                    # for Early_Stage_start_days in range(0,20):
 
-                    Early_Stage_start_price = stockRecords_list[start_date + Early_Stage_start_days -1].OpeningPrice
+
+                    Early_Stage_start_price = stockRecords_list[start_date].DayLow
                     Early_Stage_start_at = Early_Stage_start_date
-                    if N_Font_Type_Stock.objects.filter(stock=stock,red_sign_start_at__gte=(twdt.date() - timedelta(days=3))).count() > 0:
+                    if N_Font_Type_Stock.objects.filter(stock=stock,red_sign_start_at__gte=(twdt.date() - timedelta(days=3))).count() != 0:
                         red_sign_list.append({'股票名稱':stock.name,'股票代號':stock.stock_code,'日期':red_sign_start_at})
+
                     if N_Font_Type_Stock.objects.filter(stock=stock,Early_Stage_start_at = Early_Stage_start_at).count() == 0:
                         N_type_stock = N_Font_Type_Stock()
                         N_type_stock.stock=stock
@@ -236,7 +241,7 @@ def get_recent_N_font_stock(args):
                         N_type_stock.Early_Stage_start_price = Early_Stage_start_price
                         if red_sign_start_at != None:
                             N_type_stock.red_sign_start_at = red_sign_start_at
-
+                            print(f'股票名稱:{stock.name},股票代號:{stock.stock_code},日期:{red_sign_start_at}')
                         if Early_Stage_end_date != None:
                             N_type_stock.Early_Stage_high_price = Early_Stage_high_price
                             N_type_stock.Early_Stage_correction_start_at = Early_Stage_correction_start_at
@@ -249,6 +254,7 @@ def get_recent_N_font_stock(args):
                         N_type_stock.Early_Stage_high_price = Early_Stage_high_price
                         if red_sign_start_at != None:
                             N_type_stock.red_sign_start_at = red_sign_start_at
+                            print(f'股票名稱:{stock.name},股票代號:{stock.stock_code},日期:{red_sign_start_at}')
                         if Early_Stage_end_date != None:
                             N_type_stock.Early_Stage_high_price = Early_Stage_high_price
                             N_type_stock.Early_Stage_correction_start_at = Early_Stage_correction_start_at
@@ -364,7 +370,7 @@ def calculate_MACD():
 
 @shared_task
 def delete_data():
-    from stockCore.models import User,Stock ,StockRecord ,StockDayRecommend ,KbarsType ,N_Font_Type_Stock
-    N_type_stocks = N_Font_Type_Stock.objects.filter(id__lte=335)
+    from stockCore.models import N_Font_Type_Stock
+    N_type_stocks = N_Font_Type_Stock.objects.filter(id__lte=632)
     N_type_stocks.delete()
 
