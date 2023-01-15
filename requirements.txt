@@ -1,4 +1,4 @@
-django==4.1.2
+django
 sqlalchemy==1.4.41
 celery==5.2.7
 requests==2.28.1
@@ -8,8 +8,9 @@ djangorestframework==3.14.0
 bs4
 line-bot-sdk
 django-ckeditor
+importlib-metadata==4.13.0
 # lxml
 scipy
 numpy
-shioaji
 pandas
+shioaji==0.3.4.dev6

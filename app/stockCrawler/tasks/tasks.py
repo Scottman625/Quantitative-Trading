@@ -304,7 +304,7 @@ def calculate_MACD():
         start_date = twdt.date().strftime("%Y-%m-%d")
     for stock in stocks:
         try:
-            if StockRecord.objects.filter(stock=stock,id__gte=150000).count() != 0:
+            # if StockRecord.objects.filter(stock=stock,id__gte=150000).count() != 0:
                 stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')
             # if stockRecords.filter(date=start_date,EMA_12__isnull=False,EMA_26__isnull=False,DIF__isnull=False,MACD__isnull=False).count() == 0:
                 for stockRecord in stockRecords:
@@ -363,8 +363,6 @@ def calculate_MACD():
                     else:
                         pass
 
-            else:
-                pass
         except:
             pass
 

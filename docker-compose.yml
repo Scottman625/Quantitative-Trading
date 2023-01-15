@@ -1,0 +1,33 @@
+version: "3"
+services:
+  db:
+    restart: always
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: my-database
+      POSTGRES_PASSWORD: admin
+      POSTGRES_PORT: 5432
+    volumes:
+      - pgdata:/var/lib/posgresql/data
+  pgadmin:
+      image: dpage/pgadmin4
+      container_name: demo-pgadmin #you can change this
+      depends_on:
+        - db
+      ports:
+        - "5051:80"
+      environment:
+        PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+        PGADMIN_DEFAULT_PASSWORD: root
+      restart: always
+  app:
+    image: my-app:latest
+    ports:
+      - "8080:8080"
+    # command: pip install pip -U && pip install -r requirements.txt
+    depends_on:
+      - db
+    tty: true
+volumes:
+  pgdata:
