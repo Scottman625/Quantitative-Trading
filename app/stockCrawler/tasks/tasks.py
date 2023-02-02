@@ -27,28 +27,29 @@ def get_stock_datas(arg):
     PASSWORD = user.account_password #密碼
     api.login(PERSON_ID, PASSWORD) # 登入
 
-    tw = pytz.timezone('Asia/Taipei')
-    twdt = tw.localize(datetime.now())
-    weekday = twdt.weekday()
-    if twdt.hour < 13:
-        weekday = weekday - 1
-    if weekday == 5:
-        start_date = (twdt.date() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # tw = pytz.timezone('Asia/Taipei')
+    # twdt = tw.localize(datetime.now())
+    # weekday = twdt.weekday()
+    # if twdt.hour < 13:
+    #     weekday = weekday - 1
+    # if weekday == 5:
+    #     start_date = (twdt.date() - timedelta(days=1)).strftime("%Y-%m-%d")
         
-    elif weekday == 6:
-        start_date = (twdt.date() - timedelta(days=2)).strftime("%Y-%m-%d")
-    elif weekday == -1:
-        start_date = (twdt.date() - timedelta(days=3)).strftime("%Y-%m-%d")
-    else:
-        start_date = twdt.date().strftime("%Y-%m-%d")
+    # elif weekday == 6:
+    #     start_date = (twdt.date() - timedelta(days=2)).strftime("%Y-%m-%d")
+    # elif weekday == -1:
+    #     start_date = (twdt.date() - timedelta(days=3)).strftime("%Y-%m-%d")
+    # else:
+    #     start_date = twdt.date().strftime("%Y-%m-%d")
 
-    if weekday == 0:
-        EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=3)
-    else:
-        EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=1)
-        
+    # if weekday == 0:
+    #     EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=3)
+    # else:
+    #     EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=1)
+    start_date = (StockRecord.objects.filter(stock=Stock.objects.get(stock_code='6689'),MACD__isnull=False).order_by('-date').first().date).strftime("%Y-%m-%d")
+    EMA_start_date = StockRecord.objects.filter(stock=Stock.objects.get(stock_code='6689'),MACD__isnull=False).order_by('-date').first().date
     stocks = Stock.objects.all()
-    print(start_date)
+    print(EMA_start_date)
     for stock in stocks:
         # if (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=5))).count() == 0) and (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=2))).count() == 0):
             try:
@@ -288,83 +289,91 @@ def get_recent_N_font_stock(args):
     print(red_sign_list)
 
 @shared_task
+def calculate_EMA():
+    from stockCore.models import User,Stock ,StockRecord  
+    stocks = Stock.objects.all()
+    tw = pytz.timezone('Asia/Taipei')
+    twdt = tw.localize(datetime.now())
+    for stock in stocks:
+        print(stock.stock_code)
+        if StockRecord.objects.filter(stock=stock,date=twdt.date(),DIF__isnull=False).count() != 0 :
+            pass
+        else:
+            try:
+                    stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')
+                    for stockRecord in stockRecords:
+                        if stockRecords.filter(date__lte=stockRecord.date).count() == 12:
+                            stockRecords_12 = stockRecord
+                            if stockRecords.filter(date=stockRecords_12.date,EMA_12__isnull=False).count() == 0:
+                                stockRecords_12.EMA_12 = stockRecords_12.MA_12
+                                stockRecords_12.save()
+                        if stockRecords.filter(date__lte=stockRecord.date).count() == 26:
+                            stockRecords_26 = stockRecord
+                            if stockRecords.filter(date=stockRecords_26.date,EMA_26__isnull=False).count() == 0:
+                                stockRecords_26.EMA_26 = stockRecords_26.MA_26
+                                stockRecords_26.save()
+                    
+                    
+                    stockRecords_12_list = list(stockRecords.filter(date__gte=stockRecords_12.date).order_by('date'))
+                    for i in range(1,len(stockRecords_12_list)):
+                        if stockRecords.filter(date=stockRecords_12_list[i].date,EMA_12__isnull=False).count() == 0:
+                            # cdp = (stockRecords_12_list[i].DayHigh + stockRecords_12_list[i].DayLow + (stockRecords_12_list[i].ClosingPrice * 2))/4
+                            # print('cdp:',cdp)
+                            ema12 = round((stockRecords_12_list[i].ClosingPrice * round(decimal.Decimal(2/13),2)) + (stockRecords_12_list[i-1].EMA_12)*(1-round(decimal.Decimal(2/13),2)),2)
+
+                            stockRecords_12_list[i].EMA_12 = ema12
+                            stockRecords_12_list[i].save()
+                        
+
+                    stockRecords_26_list = list(stockRecords.filter(date__gte=stockRecords_26.date).order_by('date'))
+                    
+                    for i in range(1,len(stockRecords_26_list)):
+                        if (stockRecords.filter(date=stockRecords_26_list[i].date,EMA_26__isnull=False).count() == 0) | (stockRecords.filter(date=stockRecords_26_list[i].date,DIF__isnull=False).count() == 0):
+                            EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/27),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27),2)),2)
+                            if stockRecords_26_list[i].EMA_26 != EMA_26:
+                                stockRecords_26_list[i].EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/27),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27),2)),2)
+                                stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - stockRecords_26_list[i].EMA_26
+                                stockRecords_26_list[i].save()
+                            else:
+                                pass
+
+
+            except:
+                pass
+
 def calculate_MACD():
     from stockCore.models import User,Stock ,StockRecord  
     stocks = Stock.objects.all()
     tw = pytz.timezone('Asia/Taipei')
     twdt = tw.localize(datetime.now())
-    weekday = twdt.weekday()
-    if twdt.hour < 14:
-        weekday = weekday - 1
-    if weekday == 5:
-        start_date = (twdt.date() - timedelta(days=1)).strftime("%Y-%m-%d")
-    elif weekday == 6:
-        start_date = (twdt.date() - timedelta(days=2)).strftime("%Y-%m-%d")
-    else:
-        start_date = twdt.date().strftime("%Y-%m-%d")
     for stock in stocks:
-        try:
-            # if StockRecord.objects.filter(stock=stock,id__gte=150000).count() != 0:
-                stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')
-            # if stockRecords.filter(date=start_date,EMA_12__isnull=False,EMA_26__isnull=False,DIF__isnull=False,MACD__isnull=False).count() == 0:
-                for stockRecord in stockRecords:
-                    if stockRecords.filter(date__lte=stockRecord.date).count() == 12:
-                        stockRecords_12 = stockRecord
-                        if stockRecords.filter(date=stockRecords_12.date,EMA_12__isnull=False).count() == 0:
-                            stockRecords_12.EMA_12 = stockRecords_12.MA_12
-                            stockRecords_12.save()
-                    if stockRecords.filter(date__lte=stockRecord.date).count() == 26:
-                        stockRecords_26 = stockRecord
-                        if stockRecords.filter(date=stockRecords_26.date,EMA_26__isnull=False).count() == 0:
-                            stockRecords_26.EMA_26 = stockRecords_26.MA_26
-                            stockRecords_26.save()
-                
-                
-                stockRecords_12_list = list(stockRecords.filter(date__gte=stockRecords_12.date).order_by('date'))
-                for i in range(1,len(stockRecords_12_list)):
-                    if stockRecords.filter(date=stockRecords_12_list[i].date,EMA_12__isnull=False).count() == 0:
-                        # cdp = (stockRecords_12_list[i].DayHigh + stockRecords_12_list[i].DayLow + (stockRecords_12_list[i].ClosingPrice * 2))/4
-                        # print('cdp:',cdp)
-                        ema12 = round((stockRecords_12_list[i].ClosingPrice * round(decimal.Decimal(2/13),2)) + (stockRecords_12_list[i-1].EMA_12)*(1-round(decimal.Decimal(2/13),2)),2)
-
-                        stockRecords_12_list[i].EMA_12 = ema12
-                        stockRecords_12_list[i].save()
+        print(stock.stock_code)
+        if StockRecord.objects.filter(stock=stock,date=twdt.date(),MACD__isnull=False).count() != 0 :
+            pass
+        else:
+            try:     
+                    stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')               
+                    for stockRecord in stockRecords:
+                        if stockRecords.filter(date__lte=stockRecord.date,DIF__isnull=False).count() == 9:
+                            stockRecords_MACD_9 = stockRecord
+                            # if stockRecords.filter(date=stockRecords_MACD_9.date,MACD__isnull=False).count() == 0:
+                            MACD_9 = stockRecords.filter(DIF__isnull=False).order_by('date')[:9].aggregate(Avg('DIF'))['DIF__avg']
+                            stockRecords_MACD_9.MACD = MACD_9
+                            stockRecords_MACD_9.save()
                     
-
-                stockRecords_26_list = list(stockRecords.filter(date__gte=stockRecords_26.date).order_by('date'))
-                
-                for i in range(1,len(stockRecords_26_list)):
-                    # if (stockRecords.filter(date=stockRecords_26_list[i].date,EMA_26__isnull=False).count() == 0) | (stockRecords.filter(date=stockRecords_26_list[i].date,DIF__isnull=False).count() == 0):
-                        EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/27),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27),2)),2)
-                        if stockRecords_26_list[i].EMA_26 != EMA_26:
-                            stockRecords_26_list[i].EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/27),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27),2)),2)
-                            stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - stockRecords_26_list[i].EMA_26
-                            stockRecords_26_list[i].save()
+                    stockRecords_MACD_list = list(stockRecords.filter(DIF__isnull=False,date__gte=stockRecords_MACD_9.date).order_by('date'))
+                    for i in range(1,len(stockRecords_MACD_list)):
+                        # if stockRecords.filter(date=stockRecords_MACD_list[i].date,MACD__isnull=False).count() == 0:
+                        MACD = round(decimal.Decimal(stockRecords_MACD_list[i-1].MACD + round(decimal.Decimal(2/10),2)*(stockRecords_MACD_list[i].DIF-stockRecords_MACD_list[i-1].MACD)),2)
+                        if stockRecords_MACD_list[i].MACD != MACD:
+                            stockRecords_MACD_list[i].MACD = round(decimal.Decimal(stockRecords_MACD_list[i-1].MACD + round(decimal.Decimal(2/10),2)*(stockRecords_MACD_list[i].DIF-stockRecords_MACD_list[i-1].MACD)),2)
+                            stockRecords_MACD_list[i].save()
                         else:
                             pass
-                
 
-                for stockRecord in stockRecords:
-                    if stockRecords.filter(date__lte=stockRecord.date,DIF__isnull=False).count() == 9:
-                        stockRecords_MACD_9 = stockRecord
-                        print("stockRecords_MACD_9:",stockRecords_MACD_9)
-                        # if stockRecords.filter(date=stockRecords_MACD_9.date,MACD__isnull=False).count() == 0:
-                        MACD_9 = stockRecords.filter(DIF__isnull=False).order_by('date')[:9].aggregate(Avg('DIF'))['DIF__avg']
-                        stockRecords_MACD_9.MACD = MACD_9
-                        stockRecords_MACD_9.save()
-                
-                stockRecords_MACD_list = list(stockRecords.filter(DIF__isnull=False,date__gte=stockRecords_MACD_9.date).order_by('date'))
-                for i in range(1,len(stockRecords_MACD_list)):
-                    # if stockRecords.filter(date=stockRecords_MACD_list[i].date,MACD__isnull=False).count() == 0:
-                    MACD = round(decimal.Decimal(stockRecords_MACD_list[i-1].MACD + round(decimal.Decimal(2/10),2)*(stockRecords_MACD_list[i].DIF-stockRecords_MACD_list[i-1].MACD)),2)
-                    if stockRecords_MACD_list[i].MACD != MACD:
-                        stockRecords_MACD_list[i].MACD = round(decimal.Decimal(stockRecords_MACD_list[i-1].MACD + round(decimal.Decimal(2/10),2)*(stockRecords_MACD_list[i].DIF-stockRecords_MACD_list[i-1].MACD)),2)
-                        stockRecords_MACD_list[i].save()
-                    else:
-                        pass
+            except:
+                pass
 
-        except:
-            pass
 
 @shared_task
 def delete_data():

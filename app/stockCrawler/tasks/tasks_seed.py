@@ -80,9 +80,11 @@ def import_stock_records():
         EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=1)
         
     stocks = Stock.objects.all()
-    print(start_date)
     for stock in stocks:
-        # if (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=5))).count() == 0) and (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=2))).count() == 0):
+        print(stock.stock_code)
+        if StockRecord.objects.filter(stock=stock,date=twdt.date(),MACD__isnull=False).count() != 0 :
+            pass
+        else:
             try:
                 kbars =api.kbars(contract=api.Contracts.Stocks[stock.stock_code], start = start_date)
                 df = pd.DataFrame({**kbars})
@@ -92,7 +94,6 @@ def import_stock_records():
                 df.set_index(df.ts,inplace=True)
                 df = df.resample('D').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume':'sum'})
                 df.dropna(inplace=True)
-                print(stock.stock_code)
                 for index, row in df.iterrows():
                     try:
                         if StockRecord.objects.filter(stock=stock,date=row.name.date()).count()==0:
@@ -128,7 +129,6 @@ def import_stock_records():
                         # cdp = (stockRecords_12_list[i].DayHigh + stockRecords_12_list[i].DayLow + (stockRecords_12_list[i].ClosingPrice * 2))/4
                         # print('cdp:',cdp)
                         ema12 = round((stockRecords_12_list[i].ClosingPrice * round(decimal.Decimal(2/13),2)) + (stockRecords_12_list[i-1].EMA_12)*(1-round(decimal.Decimal(2/13),2)),2)
-                        print(stockRecords_12_list[i])
                         stockRecords_12_list[i].EMA_12 = ema12
                         stockRecords_12_list[i].save()
                     
@@ -141,20 +141,19 @@ def import_stock_records():
                         stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - stockRecords_26_list[i].EMA_26
                         stockRecords_26_list[i].save()
 
-                for stockRecord in stockRecords:
-                    if stockRecords.filter(date__lte=stockRecord.date,DIF__isnull=False).count() == 9:
-                        stockRecords_MACD_9 = stockRecord
-                        print("stockRecords_MACD_9:",stockRecords_MACD_9)
-                        # if stockRecords.filter(date=stockRecords_MACD_9.date,MACD__isnull=False).count() == 0:
-                        MACD_9 = stockRecords.filter(DIF__isnull=False).order_by('date')[:9].aggregate(Avg('DIF'))['DIF__avg']
-                        stockRecords_MACD_9.MACD = MACD_9
-                        stockRecords_MACD_9.save()
+                # for stockRecord in stockRecords:
+                #     if stockRecords.filter(date__lte=stockRecord.date,DIF__isnull=False).count() == 9:
+                #         stockRecords_MACD_9 = stockRecord
+                #         # if stockRecords.filter(date=stockRecords_MACD_9.date,MACD__isnull=False).count() == 0:
+                #         MACD_9 = stockRecords.filter(DIF__isnull=False).order_by('date')[:9].aggregate(Avg('DIF'))['DIF__avg']
+                #         stockRecords_MACD_9.MACD = MACD_9
+                #         stockRecords_MACD_9.save()
 
-                stockRecords_MACD_list = list(stockRecords.filter(DIF__isnull=False,date__gte=EMA_start_date).order_by('date'))
-                for i in range(1,len(stockRecords_MACD_list)):
-                    if stockRecords.filter(date=stockRecords_MACD_list[i].date,MACD__isnull=False).count() == 0:
-                        stockRecords_MACD_list[i].MACD = round(decimal.Decimal(stockRecords_MACD_list[i-1].MACD + round(decimal.Decimal(2/10),2)*(stockRecords_MACD_list[i].DIF-stockRecords_MACD_list[i-1].MACD)),2)
-                        stockRecords_MACD_list[i].save()
+                # stockRecords_MACD_list = list(stockRecords.filter(DIF__isnull=False,date__gte=EMA_start_date).order_by('date'))
+                # for i in range(1,len(stockRecords_MACD_list)):
+                #     if stockRecords.filter(date=stockRecords_MACD_list[i].date,MACD__isnull=False).count() == 0:
+                #         stockRecords_MACD_list[i].MACD = round(decimal.Decimal(stockRecords_MACD_list[i-1].MACD + round(decimal.Decimal(2/10),2)*(stockRecords_MACD_list[i].DIF-stockRecords_MACD_list[i-1].MACD)),2)
+                #         stockRecords_MACD_list[i].save()
 
             except:
                 # print(stock.name + " " + stock.stock_code  + " no index data.")
