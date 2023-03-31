@@ -13,4 +13,10 @@ importlib-metadata==4.13.0
 scipy
 numpy
 pandas
-shioaji==0.3.4.dev6
+protobuf==3.20.*
+# shioaji==0.3.4.dev6
+shioaji
+pyyaml 
+h5py
+tensorflow
+

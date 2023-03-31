@@ -1,16 +1,23 @@
 from django.test import TestCase
 from datetime import date, datetime, timedelta ,timezone
 import pytz
-# tw = pytz.timezone('Asia/Taipei')
-# twdt = tw.localize(datetime.now())
-# a = twdt.date()
-# print((datetime.strptime("2022-12-26","%Y-%m-%d").date() - timedelta(days=2)).strftime("%Y-%m-%d"))
-# Create your tests here.
-results = [[]] * 5
-def function():
-    return [lambda x:i * x for i in range(5)]
+import pandas as pd
 
-for i in range(5):
-    for j, f in enumerate(function()):
-        results[j].append(f(i))
-print(results)
+item_colums = []
+columns = []
+list = [1,3,4,5]
+for x in range(19,-1,-1):
+    item_colums.append(list)
+
+
+# for x in range(19,-1,-1):
+#     item_colums.append(x)
+print(item_colums)
+# df = pd.DataFrame (item_colums, columns = ['x' ,'x+1'])
+# print (df)
+
+row=len(item_colums)
+column=len(item_colums[0])
+print(item_colums[0])
+print(f'Rows:{row}, Column:{column}')
+print("Shape of a list:",len(item_colums))

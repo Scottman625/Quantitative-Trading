@@ -381,3 +381,26 @@ def delete_data():
     N_type_stocks = N_Font_Type_Stock.objects.filter(id__lte=632)
     N_type_stocks.delete()
 
+
+@shared_task
+def add_signal():
+    from stockCore.models import User,Stock ,StockRecord
+    stocks = Stock.objects.all()
+    for stock in stocks:
+        print(stock.stock_code)
+        try:
+            stockRecords = StockRecord.objects.filter(stock=stock).order_by('date')
+            stockRecords_list = list(stockRecords)
+
+            for i in range(len(stockRecords_list) - 5):
+                if (stockRecords_list[i+5].DayHigh - stockRecords_list[i].ClosingPrice) / (stockRecords_list[i].ClosingPrice) > 0.1:
+                    stockRecords_list[i].Signal = 1
+                    stockRecords_list[i].save()
+                    print(stockRecords_list[i+5].date, stockRecords_list[i].date)
+                else:
+                    if stockRecords_list[i].Signal == 1:
+                        stockRecords_list[i].Signal = 0
+                        stockRecords_list[i].save()
+
+        except:
+            pass
