@@ -9,14 +9,29 @@ bs4
 line-bot-sdk
 django-ckeditor
 importlib-metadata==4.13.0
+
+charset-normalizer<3.0,>=2.0
+bs4
+# line-bot-sdk
+django-ckeditor
+importlib-metadata==4.12.0
 # lxml
 scipy
 numpy
 pandas
 protobuf==3.20.*
+
 # shioaji==0.3.4.dev6
 shioaji
 pyyaml 
 h5py
 tensorflow
+
+shioaji==0.3.4.dev6
+# shioaji
+typing-extensions==4.0.1
+# pyyaml 
+# h5py
+# tensorflow
+
 
