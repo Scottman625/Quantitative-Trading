@@ -186,7 +186,8 @@ class KbarsType(models.Model):
         ('1', 'ChildParent'),
         ('2', 'LongShadeLine'),
         ('3', 'N_type'),
-        ('4','Red_sign')
+        ('4','Red_sign'),
+        ('5','Model_Predict')
     ]
     name = models.CharField(max_length=100, choices=Kbars_Type,null=True,blank=True)
     def __str__(self):
