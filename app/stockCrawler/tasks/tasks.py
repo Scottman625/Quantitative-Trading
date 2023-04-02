@@ -15,7 +15,7 @@ from django.db.models import Avg, Sum
 @shared_task
 def get_stock_datas(arg):
     from stockCore.models import User, Stock, StockRecord
-    user = User.objects.get(id=2)
+    user = User.objects.get(id=1)
     print(sj.__version__)  # 版本為 "0.3.6.dev3"
     sj.__version__  # 版本為 "0.3.6.dev3"
     api = sj.Shioaji(simulation=False)  # simulation=False 即表示使用正式環境
