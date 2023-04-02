@@ -1,13 +1,13 @@
 # #!/usr/bin/env bash
 
-# set -e
+set -e
 
 # # TODO: Set to URL of git repo.
-# PROJECT_GIT_URL='https://github.com/Scottman625/Quantitative-Trading.git'
+PROJECT_GIT_URL='https://github.com/Scottman625/Quantitative-Trading.git'
 
-# PROJECT_BASE_PATH='/usr/local/apps'
+PROJECT_BASE_PATH='/usr/local/apps'
 
-# PROJECT_PATH='/usr/local/apps/app'
+PROJECT_PATH='/usr/local/apps/app'
 
 # echo "Installing dependencies..."
 # apt-get update
@@ -29,9 +29,9 @@
 # $PROJECT_BASE_PATH/env/bin/python3 -m pip install uwsgi
 
 # # Run migrations and collectstatic
-# cd $PROJECT_PATH
-# $PROJECT_BASE_PATH/env/bin/python3 manage.py migrate
-# $PROJECT_BASE_PATH/env/bin/python3 manage.py collectstatic --noinput
+cd $PROJECT_PATH
+$PROJECT_BASE_PATH/env/bin/python3 manage.py migrate
+$PROJECT_BASE_PATH/env/bin/python3 manage.py collectstatic --noinput
 
 # Configure supervisor
 cp $PROJECT_PATH/deploy/supervisor_profiles_api.conf /etc/supervisor/conf.d/profiles_api.conf
