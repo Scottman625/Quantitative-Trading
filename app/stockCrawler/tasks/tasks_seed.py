@@ -81,8 +81,9 @@ def import_stock_records():
             start_date, "%Y-%m-%d").date() - timedelta(days=1)
 
     stocks = Stock.objects.all()
-    print(stock.stock_code)
+
     for stock in stocks:
+        print(stock.stock_code)
         try:
             kbars = api.kbars(
                 contract=api.Contracts.Stocks[stock.stock_code], start=start_date)
