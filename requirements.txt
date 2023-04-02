@@ -15,13 +15,13 @@ scipy
 numpy
 pandas
 protobuf==3.20.*
-
+tensorflow
 # shioaji==0.3.4.dev6
 shioaji
 pyyaml 
 h5py
-tensorflow
-sklearn
+
+# sklearn
 # shioaji==0.3.4.dev6
 
 

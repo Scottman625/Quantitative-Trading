@@ -13,7 +13,7 @@ ADD requirements.txt /code/
 # 安装库
 RUN pip install -r requirements.txt
 
-RUN pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.9.0-py3-none-any.whl
+# RUN pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.9.0-py3-none-any.whl
 # 将当前目录复制到容器的 code 目录
 ADD . /code/
 
