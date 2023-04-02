@@ -29,19 +29,19 @@ PROJECT_PATH='/usr/local/apps/app'
 # $PROJECT_BASE_PATH/env/bin/python3 -m pip install uwsgi
 
 # # Run migrations and collectstatic
-cd $PROJECT_PATH
-$PROJECT_BASE_PATH/env/bin/python3 manage.py migrate
-$PROJECT_BASE_PATH/env/bin/python3 manage.py collectstatic --noinput
+# cd $PROJECT_PATH
+# $PROJECT_BASE_PATH/env/bin/python3 manage.py migrate
+# $PROJECT_BASE_PATH/env/bin/python3 manage.py collectstatic --noinput
 
 # Configure supervisor
-cp $PROJECT_PATH/deploy/supervisor_profiles_api.conf /etc/supervisor/conf.d/profiles_api.conf
-supervisorctl reread
-supervisorctl update
-supervisorctl restart profiles_api
+# cp $PROJECT_PATH/deploy/supervisor_profiles_api.conf /etc/supervisor/conf.d/profiles_api.conf
+# supervisorctl reread
+# supervisorctl update
+# supervisorctl restart profiles_api
 
 # Configure nginx
-cp $PROJECT_PATH/deploy/nginx_profiles_api.conf /etc/nginx/sites-available/profiles_api.conf
-rm /etc/nginx/sites-enabled/default
+# cp $PROJECT_PATH/deploy/nginx_profiles_api.conf /etc/nginx/sites-available/profiles_api.conf
+# rm /etc/nginx/sites-enabled/default
 ln -s /etc/nginx/sites-available/profiles_api.conf /etc/nginx/sites-enabled/profiles_api.conf
 systemctl restart nginx.service
 
