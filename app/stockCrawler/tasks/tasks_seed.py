@@ -163,3 +163,8 @@ def import_stock_records():
                 pass
 
     api.logout()  # 登出
+
+
+def add_user():
+    User.objects.create(password='scott0815',
+                        email='scottman608@gmail', name='Scott')
