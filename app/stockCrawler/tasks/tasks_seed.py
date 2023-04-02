@@ -73,7 +73,8 @@ def import_stock_records():
     else:
         start_date = twdt.date().strftime("%Y-%m-%d")
 
-    start_date = '2022-07-01'
+    start_date = '2022-04-01'
+    end_date = '2022-07-01'
     if weekday == 0:
         EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=3)
     else:
@@ -82,11 +83,11 @@ def import_stock_records():
     stocks = Stock.objects.all()
     for stock in stocks:
         print(stock.stock_code)
-        if StockRecord.objects.filter(stock=stock,date=twdt.date(),MACD__isnull=False).count() != 0 :
+        if StockRecord.objects.filter(stock=stock,date=datetime.strptime('2022-06-30', '%Y-%m-%d').date()).count() != 0 :
             pass
         else:
             try:
-                kbars =api.kbars(contract=api.Contracts.Stocks[stock.stock_code], start = start_date)
+                kbars =api.kbars(contract=api.Contracts.Stocks[stock.stock_code], start = start_date,end=end_date)
                 df = pd.DataFrame({**kbars})
                 df.ts = pd.to_datetime(df.ts)
                 # df
@@ -111,35 +112,35 @@ def import_stock_records():
                     except:
                         pass
                 # EMA_start_date = datetime.strptime(start_date,"%Y-%m-%d").date() - timedelta(days=1)
-                stockRecords = StockRecord.objects.filter(stock=stock).order_by('-date')
-                for stockRecord in stockRecords:
-                    if stockRecords.filter(date__lte=stockRecord.date).count() == 12:
-                        stockRecords_12 = stockRecord
-                        if stockRecords.filter(date=stockRecords_12.date,EMA_12__isnull=False).count() == 0:
-                            stockRecords_12.EMA_12 = stockRecords_12.MA_12
-                            stockRecords_12.save()
-                    if stockRecords.filter(date__lte=stockRecord.date).count() == 26:
-                        stockRecords_26 = stockRecord
-                        if stockRecords.filter(date=stockRecords_26.date,EMA_26__isnull=False).count() == 0:
-                            stockRecords_26.EMA_26 = stockRecords_26.MA_26
-                            stockRecords_26.save()
-                stockRecords_12_list = list(stockRecords.filter(date__gte=EMA_start_date).order_by('date'))
-                for i in range(1,len(stockRecords_12_list)):
-                    if stockRecords.filter(date=stockRecords_12_list[i].date,EMA_12__isnull=False).count() == 0:
-                        # cdp = (stockRecords_12_list[i].DayHigh + stockRecords_12_list[i].DayLow + (stockRecords_12_list[i].ClosingPrice * 2))/4
-                        # print('cdp:',cdp)
-                        ema12 = round((stockRecords_12_list[i].ClosingPrice * round(decimal.Decimal(2/13),2)) + (stockRecords_12_list[i-1].EMA_12)*(1-round(decimal.Decimal(2/13),2)),2)
-                        stockRecords_12_list[i].EMA_12 = ema12
-                        stockRecords_12_list[i].save()
+                # stockRecords = StockRecord.objects.filter(stock=stock,date__lte=end_date).order_by('-date')
+                # for stockRecord in stockRecords:
+                #     if stockRecords.filter(date__lte=stockRecord.date).count() == 12:
+                #         stockRecords_12 = stockRecord
+                #         if stockRecords.filter(date=stockRecords_12.date,EMA_12__isnull=False).count() == 0:
+                #             stockRecords_12.EMA_12 = stockRecords_12.MA_12
+                #             stockRecords_12.save()
+                #     if stockRecords.filter(date__lte=stockRecord.date).count() == 26:
+                #         stockRecords_26 = stockRecord
+                #         if stockRecords.filter(date=stockRecords_26.date,EMA_26__isnull=False).count() == 0:
+                #             stockRecords_26.EMA_26 = stockRecords_26.MA_26
+                #             stockRecords_26.save()
+                # stockRecords_12_list = list(stockRecords.filter(date__gte=EMA_start_date).order_by('date'))
+                # for i in range(1,len(stockRecords_12_list)):
+                #     if stockRecords.filter(date=stockRecords_12_list[i].date,EMA_12__isnull=False).count() == 0:
+                #         # cdp = (stockRecords_12_list[i].DayHigh + stockRecords_12_list[i].DayLow + (stockRecords_12_list[i].ClosingPrice * 2))/4
+                #         # print('cdp:',cdp)
+                #         ema12 = round((stockRecords_12_list[i].ClosingPrice * round(decimal.Decimal(2/13),2)) + (stockRecords_12_list[i-1].EMA_12)*(1-round(decimal.Decimal(2/13),2)),2)
+                #         stockRecords_12_list[i].EMA_12 = ema12
+                #         stockRecords_12_list[i].save()
                     
                 
-                stockRecords_26_list = list(stockRecords.filter(date__gte=EMA_start_date).order_by('date'))
+                # stockRecords_26_list = list(stockRecords.filter(date__gte=EMA_start_date).order_by('date'))
                 
-                for i in range(1,len(stockRecords_26_list)):
-                    if (stockRecords.filter(date=stockRecords_26_list[i].date,EMA_26__isnull=False).count() == 0) | (stockRecords.filter(date=stockRecords_26_list[i].date,DIF__isnull=False).count() == 0):
-                        stockRecords_26_list[i].EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/27),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27),2)),2)
-                        stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - stockRecords_26_list[i].EMA_26
-                        stockRecords_26_list[i].save()
+                # for i in range(1,len(stockRecords_26_list)):
+                #     if (stockRecords.filter(date=stockRecords_26_list[i].date,EMA_26__isnull=False).count() == 0) | (stockRecords.filter(date=stockRecords_26_list[i].date,DIF__isnull=False).count() == 0):
+                #         stockRecords_26_list[i].EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(decimal.Decimal(2/27),2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27),2)),2)
+                #         stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - stockRecords_26_list[i].EMA_26
+                #         stockRecords_26_list[i].save()
 
                 # for stockRecord in stockRecords:
                 #     if stockRecords.filter(date__lte=stockRecord.date,DIF__isnull=False).count() == 9:

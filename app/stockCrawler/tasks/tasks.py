@@ -50,7 +50,7 @@ def get_stock_datas(arg):
         # if (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=5)),MACD__isnull=False).count() == 0) and (StockRecord.objects.filter(stock=stock,date=(date.today() - timedelta(days=2)),MACD__isnull=False).count() == 0):
             try:
                 kbars = api.kbars(
-                    contract=api.Contracts.Stocks[stock.stock_code], start=start_date)
+                    contract=api.Contracts.Stocks[stock.stock_code], start="2022-01-01")
                 df = pd.DataFrame({**kbars})
                 df.ts = pd.to_datetime(df.ts)
                 # df
