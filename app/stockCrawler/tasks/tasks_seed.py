@@ -57,34 +57,15 @@ def import_stock_records(args):
     api.login(user.API_Key, user.Secret_Key)  # 登入
 
     tw = pytz.timezone('Asia/Taipei')
-    twdt = tw.localize(datetime.now())
-    weekday = twdt.weekday()
-    if twdt.hour < 13:
-        weekday = weekday - 1
-    if weekday == 5:
-        start_date = (twdt.date() - timedelta(days=1)).strftime("%Y-%m-%d")
-
-    elif weekday == 6:
-        start_date = (twdt.date() - timedelta(days=2)).strftime("%Y-%m-%d")
-    elif weekday == -1:
-        start_date = (twdt.date() - timedelta(days=3)).strftime("%Y-%m-%d")
-    else:
-        start_date = twdt.date().strftime("%Y-%m-%d")
+    last_date = datetime.strptime('2023-03-31', '%Y-%m-%d').date()
 
     start_date = '2016-01-01'
-    end_date = '2022-07-01'
-    if weekday == 0:
-        EMA_start_date = datetime.strptime(
-            start_date, "%Y-%m-%d").date() - timedelta(days=3)
-    else:
-        EMA_start_date = datetime.strptime(
-            start_date, "%Y-%m-%d").date() - timedelta(days=1)
 
     stocks = Stock.objects.all()
 
     for stock in stocks:
         print(stock.stock_code)
-        if StockRecord.objects.filter(stock=stock, date=twdt.date()).count() == 0:
+        if StockRecord.objects.filter(stock=stock, date=last_date.date()).count() == 0:
             try:
                 kbars = api.kbars(
                     contract=api.Contracts.Stocks[stock.stock_code], start=start_date)
@@ -122,8 +103,8 @@ def import_stock_records(args):
 
             except:
                 pass
-        if StockRecord.objects.filter(stock=stock, date=twdt.date()).count() != 0:
-            print(StockRecord.objects.get(stock=stock, date=twdt.date()))
+        if StockRecord.objects.filter(stock=stock, date=last_date.date()).count() != 0:
+            print(StockRecord.objects.get(stock=stock, date=last_date.date()))
 
     api.logout()  # 登出
 
