@@ -99,9 +99,9 @@ def import_stock_records():
                 try:
                     if StockRecord.objects.filter(stock=stock, date=row.name.date()).count() == 0:
                         stockRecord = StockRecord()
-                    # else:
-                    #     stockRecord = StockRecord.objects.filter(
-                    #         stock=stock, date=row.name.date()).first()
+                    else:
+                        stockRecord = StockRecord.objects.filter(
+                            stock=stock, date=row.name.date()).first()
                         stockRecord.stock = stock
                         stockRecord.date = row.name.date()
                         stockRecord.OpeningPrice = round(
