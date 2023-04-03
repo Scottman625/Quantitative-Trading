@@ -65,7 +65,7 @@ def import_stock_records(args):
 
     for stock in stocks:
         print(stock.stock_code)
-        if StockRecord.objects.filter(stock=stock, date=last_date.date()).count() == 0:
+        if StockRecord.objects.filter(stock=stock, date=last_date).count() == 0:
             try:
                 kbars = api.kbars(
                     contract=api.Contracts.Stocks[stock.stock_code], start=start_date)
@@ -103,8 +103,8 @@ def import_stock_records(args):
 
             except:
                 pass
-        if StockRecord.objects.filter(stock=stock, date=last_date.date()).count() != 0:
-            print(StockRecord.objects.get(stock=stock, date=last_date.date()))
+        if StockRecord.objects.filter(stock=stock, date=last_date).count() != 0:
+            print(StockRecord.objects.get(stock=stock, date=last_date))
 
     api.logout()  # 登出
 
