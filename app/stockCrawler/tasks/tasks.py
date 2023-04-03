@@ -307,7 +307,7 @@ def get_recent_N_font_stock(args):
 
 
 @shared_task
-def calculate_EMA():
+def calculate_EMA(args):
     from stockCore.models import User, Stock, StockRecord
     stocks = Stock.objects.all()
     tw = pytz.timezone('Asia/Taipei')
@@ -354,8 +354,7 @@ def calculate_EMA():
                         if stockRecords_26_list[i].EMA_26 != EMA_26:
                             stockRecords_26_list[i].EMA_26 = round(decimal.Decimal(stockRecords_26_list[i].ClosingPrice * round(
                                 decimal.Decimal(2/27), 2)) + (stockRecords_26_list[i-1].EMA_26)*(1-round(decimal.Decimal(2/27), 2)), 2)
-                            stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - \
-                                stockRecords_26_list[i].EMA_26
+                            stockRecords_26_list[i].DIF = stockRecords_26_list[i].EMA_12 - stockRecords_26_list[i].EMA_26
                             stockRecords_26_list[i].save()
                         else:
                             pass
@@ -363,8 +362,8 @@ def calculate_EMA():
             except:
                 pass
 
-
-def calculate_MACD():
+@shared_task
+def calculate_MACD(args):
     from stockCore.models import User, Stock, StockRecord
     stocks = Stock.objects.all()
     tw = pytz.timezone('Asia/Taipei')

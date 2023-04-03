@@ -68,10 +68,20 @@ def setup_periodic_tasks(sender, **kwargs):
     #     get_recent_N_font_stock.s('get recent N font type stock'),
     # )
 
+    # sender.add_periodic_task(
+    #     crontab(hour=3, minute=40),
+    #     import_stock_records.s('import_stock_records'),
+    # )
+
     sender.add_periodic_task(
         crontab(hour=3, minute=40),
-        import_stock_records.s('import_stock_records'),
+        calculate_EMA.s('calculate_EMA'),
     )
+
+    # sender.add_periodic_task(
+    #     crontab(hour=19, minute=40),
+    #     calculate_MACD.s('calculate_MACD'),
+    # )
 
 
 @app.task
@@ -102,3 +112,13 @@ def get_recent_N_font_stock(args):
 def import_stock_records(args):
     from stockCrawler.tasks.tasks_seed import import_stock_records
     import_stock_records(args)
+
+@app.task
+def calculate_EMA(args):
+    from stockCrawler.tasks.tasks import calculate_EMA
+    calculate_EMA(args)
+
+@app.task
+def calculate_MACD(args):
+    from stockCrawler.tasks.tasks import calculate_MACD
+    calculate_MACD(args)
