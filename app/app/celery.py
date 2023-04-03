@@ -69,7 +69,7 @@ def setup_periodic_tasks(sender, **kwargs):
     # )
 
     sender.add_periodic_task(
-        crontab(hour=0, minute=53),
+        crontab(hour=1, minute=0),
         import_stock_records.s('import_stock_records'),
     )
 

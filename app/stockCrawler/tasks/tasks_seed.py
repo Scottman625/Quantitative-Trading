@@ -48,7 +48,7 @@ def import_stocks():
             print(stock.name + " " + stock.stock_code)
 
 
-def import_stock_records():
+def import_stock_records(args):
     from stockCore.models import User, Stock, StockRecord
     user = User.objects.get(id=1)
     print(user)
