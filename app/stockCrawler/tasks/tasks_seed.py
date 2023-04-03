@@ -84,39 +84,46 @@ def import_stock_records(args):
 
     for stock in stocks:
         print(stock.stock_code)
-        try:
-            kbars = api.kbars(
-                contract=api.Contracts.Stocks[stock.stock_code], start=start_date)
-            df = pd.DataFrame({**kbars})
-            df.ts = pd.to_datetime(df.ts)
-            # df
-            # 分K轉成日K
-            df.set_index(df.ts, inplace=True)
-            df = df.resample('D').agg(
-                {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
-            df.dropna(inplace=True)
-            for index, row in df.iterrows():
-                try:
-                    if StockRecord.objects.filter(stock=stock, date=row.name.date()).count() == 0:
-                        stockRecord = StockRecord()
-                    else:
-                        stockRecord = StockRecord.objects.filter(
-                            stock=stock, date=row.name.date()).first()
-                    stockRecord.stock = stock
-                    stockRecord.date = row.name.date()
-                    stockRecord.OpeningPrice = round(
-                        Decimal(row.Open), 2)
-                    stockRecord.ClosingPrice = round(
-                        Decimal(row.Close), 2)
-                    stockRecord.DayHigh = round(Decimal(row.High), 2)
-                    stockRecord.DayLow = round(Decimal(row.Low), 2)
-                    stockRecord.Volume = round(Decimal(row.Volume), 2)
-                    stockRecord.save()
-                except:
-                    pass
+        if StockRecord.objects.filter(stock=stock, date=twdt.date()).count() == 0:
+            try:
+                kbars = api.kbars(
+                    contract=api.Contracts.Stocks[stock.stock_code], start=start_date)
+                df = pd.DataFrame({**kbars})
+                df.ts = pd.to_datetime(df.ts)
+                # df
+                # 分K轉成日K
+                df.set_index(df.ts, inplace=True)
+                df = df.resample('D').agg(
+                    {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+                df.dropna(inplace=True)
+                for index, row in df.iterrows():
+                    try:
+                        if StockRecord.objects.filter(stock=stock, date=row.name.date()).count() == 0:
+                            stockRecord = StockRecord()
+                        else:
+                            stockRecord = StockRecord.objects.filter(
+                                stock=stock, date=row.name.date()).first()
+                        if stockRecord.stock != None and stockRecord.date != None and stockRecord.OpeningPrice != None and stockRecord.ClosingPrice != None and stockRecord.DayHigh != None and stockRecord.DayLow != None and stockRecord.Volume != None:
+                            pass
 
-        except:
-            pass
+                        else:
+                            stockRecord.stock = stock
+                            stockRecord.date = row.name.date()
+                            stockRecord.OpeningPrice = round(
+                                Decimal(row.Open), 2)
+                            stockRecord.ClosingPrice = round(
+                                Decimal(row.Close), 2)
+                            stockRecord.DayHigh = round(Decimal(row.High), 2)
+                            stockRecord.DayLow = round(Decimal(row.Low), 2)
+                            stockRecord.Volume = round(Decimal(row.Volume), 2)
+                            stockRecord.save()
+                    except:
+                        pass
+
+            except:
+                pass
+
+        print(StockRecord.objects.get(stock=stock, date=twdt.date()))
 
     api.logout()  # 登出
 
