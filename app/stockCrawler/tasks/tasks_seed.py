@@ -122,8 +122,8 @@ def import_stock_records(args):
 
             except:
                 pass
-
-        print(StockRecord.objects.get(stock=stock, date=twdt.date()))
+        if StockRecord.objects.get(stock=stock, date=twdt.date()).count != 0:
+            print(StockRecord.objects.get(stock=stock, date=twdt.date()))
 
     api.logout()  # 登出
 
