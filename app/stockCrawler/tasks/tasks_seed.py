@@ -102,16 +102,16 @@ def import_stock_records(args):
                     else:
                         stockRecord = StockRecord.objects.filter(
                             stock=stock, date=row.name.date()).first()
-                        stockRecord.stock = stock
-                        stockRecord.date = row.name.date()
-                        stockRecord.OpeningPrice = round(
-                            Decimal(row.Open), 2)
-                        stockRecord.ClosingPrice = round(
-                            Decimal(row.Close), 2)
-                        stockRecord.DayHigh = round(Decimal(row.High), 2)
-                        stockRecord.DayLow = round(Decimal(row.Low), 2)
-                        stockRecord.Volume = round(Decimal(row.Volume), 2)
-                        stockRecord.save()
+                    stockRecord.stock = stock
+                    stockRecord.date = row.name.date()
+                    stockRecord.OpeningPrice = round(
+                        Decimal(row.Open), 2)
+                    stockRecord.ClosingPrice = round(
+                        Decimal(row.Close), 2)
+                    stockRecord.DayHigh = round(Decimal(row.High), 2)
+                    stockRecord.DayLow = round(Decimal(row.Low), 2)
+                    stockRecord.Volume = round(Decimal(row.Volume), 2)
+                    stockRecord.save()
                 except:
                     pass
 
