@@ -69,7 +69,7 @@ def setup_periodic_tasks(sender, **kwargs):
     # )
 
     sender.add_periodic_task(
-        crontab(hour=0, minute=10),
+        crontab(hour=0, minute=23),
         get_recent_N_font_stock.s('get recent N font type stock'),
     )
 
