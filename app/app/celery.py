@@ -69,8 +69,8 @@ def setup_periodic_tasks(sender, **kwargs):
     # )
 
     sender.add_periodic_task(
-        crontab(hour=0, minute=35),
-        get_recent_N_font_stock.s('get recent N font type stock'),
+        crontab(hour=0, minute=53),
+        import_stock_records.s('import_stock_records'),
     )
 
 
